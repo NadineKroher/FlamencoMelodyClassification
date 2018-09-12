@@ -1,0 +1,76 @@
+function R = fitting(f0, time, alpha)
+% FITTING Implementation of the curve fitting algorithm as described in 
+% Díaz-Báñez, J. M. and Mesa, A. (2001). Fitting rectilinear polygonal 
+% curves to a set of points in the plane. European Journal of Operational 
+% Research, 130(1):214?222. This implementation refers to its use in the
+% context of melodic contour quantization.
+% Input: f0 - contour in Hz
+%        time - time instances where f0 has been sampled
+%        alpha - error tolerance
+% Output: R - array describing piece-wise linear function 
+%                 [onset time sec] [duration sec] [MIDI pitch]
+
+% initialization
+f0_len = length(f0);
+onsets = [];
+pitch_values = [];
+durations = [];
+i=1;
+ip=1; 
+sup=[];
+inf=[];
+supfinal=[];
+inffinal=[];
+
+% check if sequence starts with increase or decrease in pitch
+if A(i+1) >= A(i) 
+    il=i; % index of lowest value
+    iu=i+1; % index of highest value
+    ip=i+1; 
+else 
+    iu=i; % index of highest value
+    il=i+1; % index of highest value
+    ip=i+1;
+end
+
+while i < f0_len
+    if ip < f0_len
+        % check if we are still in the tolerance window
+        epsilon_max=max(abs(A(iu)-A(ip)),abs(A(il)-A(ip))); 
+        if epsilon_max <= alfa
+            if A(ip)>=A(iu)
+                iu=ip;
+                ip=ip + 1;
+            elseif A(ip)<=A(il)
+                il=ip;
+                ip=ip + 1;
+            else
+                ip=ip + 1;
+            end
+        else
+            % create linear segment
+            sup=[sup A(iu)];
+            inf=[inf A(il)];
+            [i,iu,il,ip,vnote,note_MIDI,note,dur,ini]=createventana(A,i,iu,il,ip,vnote,time);
+            inicio=[inicio ini];
+            duracion=[duracion dur];
+            not_MIDI=[not_MIDI note_MIDI]; % notas midi
+            not=[not note]; %semitonos
+        end
+    else
+        %
+        %%crear nota final%%
+        supfinal=[supfinal A(iu)];
+        inffinal=[inffinal A(il)];
+        [i,iu,il,ip,vnote,note_MIDI,note,dur]=createventana(A,i,iu,il,ip,vnote ,time);
+        not_MIDI=[not_MIDI note_MIDI];
+        not=[not note];
+        duracion=[duracion dur];
+        break 
+    end
+    
+end
+
+
+end
+
